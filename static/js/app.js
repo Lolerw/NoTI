@@ -1038,17 +1038,49 @@ function openExportModal() {
     openModal('modal-export');
 }
 
-function triggerExport(format) {
+async function triggerExport(format) {
     const startDate = document.getElementById('export-start-date').value;
     const endDate = document.getElementById('export-end-date').value;
 
     if (!startDate || !endDate) {
-        alert('Por favor selecciona el rango de fechas');
+        showToast('Por favor selecciona el rango de fechas', 'warning');
         return;
     }
 
     closeModal('modal-export');
-    window.location.href = `/api/schedules/export?team_id=${STATE.currentTeamId}&start_date=${startDate}&end_date=${endDate}&format=${format}`;
+    showToast('Generando archivo ' + format.toUpperCase() + '...', 'info');
+
+    try {
+        const exportUrl = '/api/schedules/export?team_id=' + STATE.currentTeamId + '&start_date=' + startDate + '&end_date=' + endDate + '&format=' + format;
+        const res = await fetch(exportUrl);
+        if (!res.ok) {
+            let errorMsg = 'Error al exportar archivo';
+            try {
+                const errJson = await res.json();
+                if (errJson && errJson.detail) errorMsg = errJson.detail;
+            } catch (_) {
+                const txt = await res.text();
+                if (txt) errorMsg = txt;
+            }
+            showToast(errorMsg, 'warning');
+            return;
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const ext = format.toLowerCase() === 'csv' ? 'csv' : 'xlsx';
+        a.download = 'turnos_consolidados_' + startDate + '_' + endDate + '.' + ext;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        showToast('Archivo ' + format.toUpperCase() + ' descargado exitosamente', 'success');
+    } catch (err) {
+        console.error('Error al exportar:', err);
+        showToast('Fallo de conexión al descargar el archivo', 'warning');
+    }
 }
 
 async function adminReopenSchedule(userId) {
