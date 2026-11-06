@@ -1,0 +1,21 @@
+# Entorno virtual y Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Base de datos SQLite local y backups
+*.db
+*.sqlite3
+
+# Secretos y variables de entorno locales
+.env
+!.env.example
+
+# Logs y SO
+*.log
+.DS_Store
+Thumbs.db

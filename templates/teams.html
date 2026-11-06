@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoTI - Equipos y Reglas de Cupos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md">
+                        <i class="ph-bold ph-calendar-blank text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold tracking-tight text-slate-900">NoTI</span>
+                        <span class="text-xs px-2 py-0.5 ml-1 bg-emerald-100 text-emerald-800 font-semibold rounded-full">Turnos & Horarios</span>
+                    </div>
+                </a>
+                <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+                    <a href="/" class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-calendar text-lg"></i> Grilla Semanal
+                    </a>
+                    <a href="/catalog" class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-cards text-lg"></i> Catálogo de Turnos
+                    </a>
+                    <a href="/teams" class="px-3 py-2 text-emerald-700 bg-emerald-50 rounded-lg flex items-center gap-1.5 font-semibold">
+                        <i class="ph-bold ph-users-three text-lg"></i> Equipos y Cupos
+                    </a>
+                    <a href="/users" id="nav-users-link" class="hidden px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-user-gear text-lg"></i> Usuarios
+                    </a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1">
+                    <i class="ph-bold ph-arrow-left"></i> Grilla
+                </a>
+                <button onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors flex items-center gap-1" title="Cerrar Sesión">
+                    <i class="ph-bold ph-sign-out text-sm"></i>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">Equipos, Roles y Reglas de Cupos Diarios</h1>
+                <p class="text-xs text-slate-500 mt-1">Configuración de membresías (HU-01) y definición de topes máximos por día y bloque de turno (HU-03).</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <select id="team-select" onchange="loadTeamDetails()" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <!-- Opciones de equipos -->
+                </select>
+                <!-- Botón Crear Nuevo Equipo (Observación 3) -->
+                <button onclick="openCreateTeamModal()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md flex items-center gap-1.5">
+                    <i class="ph-bold ph-plus-circle text-base"></i> Crear Nuevo Equipo
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- 1. Miembros y Roles del Equipo (HU-01) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="ph-bold ph-user-circle-gear text-emerald-600"></i> Miembros y Roles (HU-01)
+                    </h2>
+                    <span class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Solo SCHEDULER va a la grilla</span>
+                </div>
+                <div class="space-y-3 mb-6" id="members-list">
+                    <!-- Miembros cargados por JS -->
+                </div>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Asignar o Cambiar Rol a Usuario</h3>
+                    <div class="flex gap-2">
+                        <select id="new-member-user" class="flex-1 text-xs p-2 border border-slate-200 rounded-lg focus:outline-none">
+                            <!-- Usuarios disponibles -->
+                        </select>
+                        <select id="new-member-role" class="text-xs p-2 border border-slate-200 rounded-lg focus:outline-none font-semibold">
+                            <option value="SCHEDULER">SCHEDULER (Operativo)</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="VISITANTE">VISITANTE</option>
+                        </select>
+                        <button onclick="addOrUpdateMember()" class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">Guardar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Reglas de Cupos Diarios (HU-03) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="ph-bold ph-shield-check text-emerald-600"></i> Cupos Diarios por Bloque (HU-03)
+                    </h2>
+                    <button onclick="saveQuotas()" class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">Guardar Cupos</button>
+                </div>
+                <p class="text-xs text-slate-500 mb-4">
+                    Define la cantidad máxima de personas permitidas en un bloque de turno por día (ej. Cupo de 1 persona en <strong>REMOTO</strong> los días lunes).
+                </p>
+
+                <div class="space-y-3" id="quotas-editor">
+                    <!-- Editor de cupos Lunes a Viernes -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Crear Nuevo Equipo (Observación 3) -->
+    <div id="modal-create-team" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col animate-in fade-in duration-150">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="ph-bold ph-users-three text-emerald-600"></i> Crear Nuevo Equipo
+                </h3>
+                <button onclick="closeModal('modal-create-team')" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+            </div>
+
+            <div class="overflow-y-auto py-4 space-y-4 flex-1">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del Equipo <span class="text-rose-500">*</span>:</label>
+                    <input id="create-team-name" type="text" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none font-bold text-slate-900" placeholder="Ej. Equipo Operaciones y Guardia">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Descripción / Propósito:</label>
+                    <textarea id="create-team-desc" rows="2" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Breve descripción del área de trabajo..."></textarea>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Integrantes y Roles del Equipo:</label>
+                        <span class="text-[11px] text-slate-500">Selecciona quiénes formarán parte</span>
+                    </div>
+
+                    <div id="create-team-users-list" class="space-y-2 border border-slate-200 rounded-xl p-3 bg-slate-50 max-h-56 overflow-y-auto">
+                        <!-- Lista de usuarios con checkbox y selector de rol -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button onclick="closeModal('modal-create-team')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                <button onclick="submitNewTeam()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md flex items-center gap-1.5">
+                    <i class="ph-bold ph-check"></i> Crear Equipo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTeam = null;
+        let allUsers = [];
+        let allTeams = [];
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        const DAY_LABELS = {"Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo"};
+
+        async function init() {
+            try {
+                const curRes = await fetch('/api/auth/current-user');
+                if (!curRes.ok) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const curUser = await curRes.json();
+                if (curUser.username === 'admin') {
+                    const navUsers = document.getElementById('nav-users-link');
+                    if (navUsers) navUsers.classList.remove('hidden');
+                }
+            } catch (e) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Cargar usuarios
+            const usersRes = await fetch('/api/auth/users');
+            allUsers = await usersRes.json();
+            const userSelect = document.getElementById('new-member-user');
+            userSelect.innerHTML = allUsers.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+
+            // Cargar equipos
+            await reloadTeamsList();
+        }
+
+        async function handleLogout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+
+        async function reloadTeamsList(selectedId = null) {
+            const teamsRes = await fetch('/api/teams');
+            allTeams = await teamsRes.json();
+            const teamSelect = document.getElementById('team-select');
+            teamSelect.innerHTML = allTeams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+            if (selectedId) {
+                teamSelect.value = selectedId;
+            } else if (allTeams.length > 0 && !teamSelect.value) {
+                teamSelect.value = allTeams[0].id;
+            }
+
+            if (teamSelect.value) {
+                await loadTeamDetails();
+            }
+        }
+
+        async function loadTeamDetails() {
+            const teamId = document.getElementById('team-select').value;
+            if (!teamId) return;
+            const res = await fetch(`/api/teams/${teamId}`);
+            currentTeam = await res.json();
+
+            // Renderizar miembros
+            const membersList = document.getElementById('members-list');
+            membersList.innerHTML = (currentTeam.members || []).map(m => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="flex items-center gap-3">
+                        <img src="${m.user.avatar_url || 'https://via.placeholder.com/40'}" class="w-8 h-8 rounded-full object-cover">
+                        <div>
+                            <div class="text-xs font-bold text-slate-900">${m.user.name}</div>
+                            <div class="text-[10px] text-slate-500">${m.user.email}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[11px] font-bold rounded-md ${
+                            m.role === 'SCHEDULER' ? 'bg-emerald-100 text-emerald-800' :
+                            m.role === 'ADMIN' ? 'bg-blue-100 text-blue-800' : 'bg-slate-200 text-slate-700'
+                        }">${m.role}</span>
+                        <button onclick="removeMember(${m.user_id})" class="text-slate-400 hover:text-rose-600 p-1" title="Remover del equipo"><i class="ph ph-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Renderizar cupos
+            const rules = currentTeam.rules_config || {};
+            const quotas = rules.quotas || {};
+            const quotasEditor = document.getElementById('quotas-editor');
+
+            quotasEditor.innerHTML = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map(day => {
+                const dayQuotas = quotas[day] || {};
+                const remoteLimit = dayQuotas["REMOTO"] !== undefined ? dayQuotas["REMOTO"] : 1;
+                return `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                        <span class="font-bold text-slate-700 w-24">${DAY_LABELS[day]}:</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-600 text-[11px]">Máx. REMOTO:</span>
+                            <input type="number" min="0" max="20" id="quota-${day}-REMOTO" value="${remoteLimit}" class="w-16 p-1 text-center font-bold border border-slate-300 rounded-lg">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCreateTeamModal() {
+            document.getElementById('create-team-name').value = '';
+            document.getElementById('create-team-desc').value = '';
+
+            const listContainer = document.getElementById('create-team-users-list');
+            listContainer.innerHTML = allUsers.map(u => `
+                <div class="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
+                    <label class="flex items-center gap-2 cursor-pointer flex-1">
+                        <input type="checkbox" id="team-user-chk-${u.id}" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                        <img src="${u.avatar_url || 'https://via.placeholder.com/32'}" class="w-6 h-6 rounded-full object-cover">
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 leading-tight">${u.name}</div>
+                            <div class="text-[10px] text-slate-500">${u.email}</div>
+                        </div>
+                    </label>
+                    <div class="ml-2">
+                        <select id="team-user-role-${u.id}" class="text-xs p-1 border border-slate-200 rounded-md font-semibold bg-slate-50 text-slate-700">
+                            <option value="SCHEDULER" selected>SCHEDULER</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="VISITANTE">VISITANTE</option>
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-create-team').classList.remove('hidden');
+        }
+
+        async function submitNewTeam() {
+            const name = document.getElementById('create-team-name').value.trim();
+            const description = document.getElementById('create-team-desc').value.trim();
+
+            if (!name) return alert('Por favor ingresa un nombre para el equipo');
+
+            const initial_members = [];
+            allUsers.forEach(u => {
+                const chk = document.getElementById(`team-user-chk-${u.id}`);
+                if (chk && chk.checked) {
+                    const role = document.getElementById(`team-user-role-${u.id}`).value;
+                    initial_members.push({ user_id: u.id, role: role });
+                }
+            });
+
+            // Reglas de cupo predeterminadas para nuevo equipo
+            const defaultQuotas = {
+                "Monday": {"REMOTO": 1},
+                "Tuesday": {"REMOTO": 1},
+                "Wednesday": {"REMOTO": 2},
+                "Thursday": {"REMOTO": 2},
+                "Friday": {"REMOTO": 1}
+            };
+
+            const res = await fetch('/api/teams', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: name,
+                    description: description,
+                    rules_config: { quotas: defaultQuotas },
+                    initial_members: initial_members
+                })
+            });
+
+            if (res.ok) {
+                const newTeam = await res.json();
+                closeModal('modal-create-team');
+                await reloadTeamsList(newTeam.id);
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error al crear equipo');
+            }
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        async function addOrUpdateMember() {
+            const teamId = document.getElementById('team-select').value;
+            const userId = parseInt(document.getElementById('new-member-user').value);
+            const role = document.getElementById('new-member-role').value;
+
+            const res = await fetch(`/api/teams/${teamId}/members`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, role: role, participates_in_schedule: (role === 'SCHEDULER') })
+            });
+
+            if (res.ok) {
+                loadTeamDetails();
+            } else {
+                alert('Error al asignar miembro');
+            }
+        }
+
+        async function removeMember(userId) {
+            const teamId = document.getElementById('team-select').value;
+            if (!confirm('¿Remover este miembro del equipo?')) return;
+            const res = await fetch(`/api/teams/${teamId}/members/${userId}`, { method: 'DELETE' });
+            if (res.ok) loadTeamDetails();
+        }
+
+        async function saveQuotas() {
+            const teamId = document.getElementById('team-select').value;
+            const updatedQuotas = {};
+
+            ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].forEach(day => {
+                const val = document.getElementById(`quota-${day}-REMOTO`).value;
+                updatedQuotas[day] = { "REMOTO": parseInt(val) };
+            });
+
+            const res = await fetch(`/api/teams/${teamId}/rules`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ quotas: updatedQuotas })
+            });
+
+            if (res.ok) {
+                alert('Reglas de cupos actualizadas correctamente.');
+                loadTeamDetails();
+            } else {
+                alert('Error al guardar cupos.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

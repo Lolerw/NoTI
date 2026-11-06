@@ -1,0 +1,59 @@
+/* Estilos específicos para la Grilla de Turnos NoTI */
+.cell-shift-btn {
+    transition: all 0.15s ease-in-out;
+}
+
+.cell-shift-btn:hover {
+    filter: brightness(0.96);
+    transform: scale(1.02);
+}
+
+.half-day-split {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 52px;
+}
+
+.half-day-part {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    transition: all 0.12s;
+}
+
+.half-day-part:hover {
+    filter: brightness(0.92);
+}
+
+/* Indicador de check pulsante */
+@keyframes pulse-subtle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.06); }
+}
+
+.check-pulse {
+    animation: pulse-subtle 3s infinite ease-in-out;
+}
+
+/* Scrollbar estilizado */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

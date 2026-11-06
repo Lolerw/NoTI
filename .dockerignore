@@ -1,0 +1,15 @@
+.venv
+venv
+env
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.pytest_cache
+tests
+Documentos_Funcionales
+.env

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoTI - Catálogo de Bloques de Turno</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="/" class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md">
+                        <i class="ph-bold ph-calendar-blank text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-extrabold tracking-tight text-slate-900">NoTI</span>
+                        <span class="text-xs px-2 py-0.5 ml-1 bg-emerald-100 text-emerald-800 font-semibold rounded-full">Turnos & Horarios</span>
+                    </div>
+                </a>
+                <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+                    <a href="/" class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-calendar text-lg"></i> Grilla Semanal
+                    </a>
+                    <a href="/catalog" class="px-3 py-2 text-emerald-700 bg-emerald-50 rounded-lg flex items-center gap-1.5 font-semibold">
+                        <i class="ph-bold ph-cards text-lg"></i> Catálogo de Turnos
+                    </a>
+                    <a href="/teams" class="px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-users-three text-lg"></i> Equipos y Cupos
+                    </a>
+                    <a href="/users" id="nav-users-link" class="hidden px-3 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5">
+                        <i class="ph-bold ph-user-gear text-lg"></i> Usuarios
+                    </a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1">
+                    <i class="ph-bold ph-arrow-left"></i> Grilla
+                </a>
+                <button onclick="handleLogout()" class="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors flex items-center gap-1" title="Cerrar Sesión">
+                    <i class="ph-bold ph-sign-out text-sm"></i>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-black text-slate-900 tracking-tight">Catálogo Maestro de Bloques de Turno (HU-02)</h1>
+                <p class="text-xs text-slate-500 mt-1">Estandarización y edición de bloques disponibles con colores, tipos de jornada y cobertura de cupo.</p>
+            </div>
+            <button onclick="openNewBlockModal()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md flex items-center gap-1.5">
+                <i class="ph-bold ph-plus"></i> Crear Nuevo Bloque
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600">
+                        <th class="py-3 px-4">Color Muestra</th>
+                        <th class="py-3 px-4">Nombre del Bloque</th>
+                        <th class="py-3 px-4">Tipo de Jornada</th>
+                        <th class="py-3 px-4">Aplica Cupo Cobertura</th>
+                        <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="catalog-table-body" class="divide-y divide-slate-100 text-sm">
+                    <!-- Filas inyectadas por JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Crear Bloque -->
+    <div id="modal-new-block" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-150">
+            <h3 class="text-lg font-bold text-slate-900">Nuevo Bloque de Turno</h3>
+            <div class="mt-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre (ej. GUARDIA NOCTURNA):</label>
+                    <input id="new-block-name" type="text" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase" placeholder="NOMBRE DEL TURNO">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Color Identificador:</label>
+                    <div class="flex items-center gap-3">
+                        <input id="new-block-color" type="color" value="#3B82F6" class="w-14 h-10 p-1 border border-slate-200 rounded-lg cursor-pointer">
+                        <span id="new-block-color-hex" class="text-xs font-mono font-bold text-slate-600">#3B82F6</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Jornada:</label>
+                    <select id="new-block-duration" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="FULL_DAY">Jornada Completa (FULL_DAY)</option>
+                        <option value="HALF_DAY">Media Jornada (HALF_DAY)</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <input id="new-block-coverage" type="checkbox" checked class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <label for="new-block-coverage" class="text-xs text-slate-700 font-medium">Requiere Cobertura / Cómputo de Cupo</label>
+                </div>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-2">
+                <button onclick="closeModal('modal-new-block')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                <button onclick="saveNewBlock()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md">Guardar Bloque</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Bloque (Observación 2) -->
+    <div id="modal-edit-block" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-150">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="ph-bold ph-pencil-simple text-emerald-600"></i> Modificar Bloque de Turno
+                </h3>
+                <button onclick="closeModal('modal-edit-block')" class="text-slate-400 hover:text-slate-600"><i class="ph-bold ph-x text-lg"></i></button>
+            </div>
+            <input type="hidden" id="edit-block-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre del Bloque:</label>
+                    <input id="edit-block-name" type="text" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none uppercase font-bold" placeholder="NOMBRE DEL TURNO">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Color Identificador:</label>
+                    <div class="flex items-center gap-3">
+                        <input id="edit-block-color" type="color" class="w-14 h-10 p-1 border border-slate-200 rounded-lg cursor-pointer" oninput="document.getElementById('edit-block-color-hex').textContent = this.value">
+                        <span id="edit-block-color-hex" class="text-xs font-mono font-bold text-slate-600">#000000</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tipo de Jornada:</label>
+                    <select id="edit-block-duration" class="w-full text-xs p-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <option value="FULL_DAY">Jornada Completa (FULL_DAY)</option>
+                        <option value="HALF_DAY">Media Jornada (HALF_DAY)</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <input id="edit-block-coverage" type="checkbox" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                    <label for="edit-block-coverage" class="text-xs text-slate-700 font-medium">Requiere Cobertura / Cómputo de Cupo</label>
+                </div>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-2">
+                <button onclick="closeModal('modal-edit-block')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                <button onclick="saveEditBlock()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md flex items-center gap-1.5">
+                    <i class="ph-bold ph-floppy-disk"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let catalogList = [];
+
+        async function loadCatalog() {
+            const res = await fetch('/api/catalog');
+            catalogList = await res.json();
+            const tbody = document.getElementById('catalog-table-body');
+            tbody.innerHTML = catalogList.map(b => `
+                <tr class="hover:bg-slate-50/50">
+                    <td class="py-3 px-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-md shadow-xs border border-black/10 inline-block" style="background-color: ${b.color};"></span>
+                            <span class="text-xs font-mono text-slate-500">${b.color}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 font-bold text-slate-900">${b.name}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full ${b.duration_type === 'FULL_DAY' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'}">
+                            ${b.duration_type === 'FULL_DAY' ? 'Jornada Completa' : 'Media Jornada'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="text-xs font-medium text-slate-600">${b.requires_coverage ? 'Sí' : 'No'}</span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <div class="flex items-center justify-end gap-3">
+                            <button onclick="openEditBlockModal(${b.id})" class="text-emerald-600 hover:text-emerald-800 text-xs font-bold hover:underline flex items-center gap-1">
+                                <i class="ph-bold ph-pencil-simple"></i> Editar
+                            </button>
+                            <button onclick="deleteBlock(${b.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold hover:underline flex items-center gap-1">
+                                <i class="ph-bold ph-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openNewBlockModal() {
+            document.getElementById('new-block-color-hex').textContent = document.getElementById('new-block-color').value;
+            document.getElementById('modal-new-block').classList.remove('hidden');
+        }
+
+        function openEditBlockModal(blockId) {
+            const block = catalogList.find(b => b.id === blockId);
+            if (!block) return;
+            document.getElementById('edit-block-id').value = block.id;
+            document.getElementById('edit-block-name').value = block.name;
+            document.getElementById('edit-block-color').value = block.color;
+            document.getElementById('edit-block-color-hex').textContent = block.color;
+            document.getElementById('edit-block-duration').value = block.duration_type;
+            document.getElementById('edit-block-coverage').checked = block.requires_coverage;
+            document.getElementById('modal-edit-block').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        async function saveNewBlock() {
+            const name = document.getElementById('new-block-name').value.trim();
+            const color = document.getElementById('new-block-color').value;
+            const duration_type = document.getElementById('new-block-duration').value;
+            const requires_coverage = document.getElementById('new-block-coverage').checked;
+
+            if (!name) return alert('Por favor ingrese un nombre para el bloque');
+
+            const res = await fetch('/api/catalog', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, color, duration_type, requires_coverage })
+            });
+
+            if (res.ok) {
+                closeModal('modal-new-block');
+                document.getElementById('new-block-name').value = '';
+                loadCatalog();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error al guardar bloque');
+            }
+        }
+
+        async function saveEditBlock() {
+            const id = document.getElementById('edit-block-id').value;
+            const name = document.getElementById('edit-block-name').value.trim();
+            const color = document.getElementById('edit-block-color').value;
+            const duration_type = document.getElementById('edit-block-duration').value;
+            const requires_coverage = document.getElementById('edit-block-coverage').checked;
+
+            if (!name) return alert('Por favor ingrese un nombre para el bloque');
+
+            const res = await fetch(`/api/catalog/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, color, duration_type, requires_coverage })
+            });
+
+            if (res.ok) {
+                closeModal('modal-edit-block');
+                loadCatalog();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'Error al modificar el bloque');
+            }
+        }
+
+        async function deleteBlock(id) {
+            if (!confirm('¿Seguro de eliminar este bloque de turno?')) return;
+            const res = await fetch(`/api/catalog/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadCatalog();
+            } else {
+                const err = await res.json();
+                alert(err.detail || 'No se pudo eliminar el bloque');
+            }
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/current-user');
+                if (!res.ok) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const user = await res.json();
+                if (user.username === 'admin') {
+                    const navUsers = document.getElementById('nav-users-link');
+                    if (navUsers) navUsers.classList.remove('hidden');
+                }
+            } catch (e) {
+                window.location.href = '/login';
+            }
+        }
+
+        async function handleLogout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+        }
+
+        document.getElementById('new-block-color').addEventListener('input', (e) => {
+            document.getElementById('new-block-color-hex').textContent = e.target.value;
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadCatalog();
+        });
+    </script>
+</body>
+</html>
