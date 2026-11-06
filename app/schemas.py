@@ -1,6 +1,7 @@
+import json
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 # --- Autenticación y Usuarios ---
 class LoginRequest(BaseModel):
@@ -108,8 +109,21 @@ class MemberStatusResponse(BaseModel):
     feedback_comment: Optional[str] = None
     confirmed_at: Optional[datetime] = None
     rejection_history: Optional[List[Dict[str, Any]]] = None
-    user: UserResponse
+    user: Optional[UserResponse] = None
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("rejection_history", mode="before")
+    @classmethod
+    def parse_rejection_history(cls, v: Any) -> Optional[List[Dict[str, Any]]]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except Exception:
+                return []
+        return v
 
 # --- Solicitudes de Workflow ---
 class PublishProposalRequest(BaseModel):
@@ -144,7 +158,7 @@ class WeeklyScheduleResponse(BaseModel):
 class GridRowResponse(BaseModel):
     user: UserResponse
     role: str
-    status: MemberStatusResponse
+    status: Optional[MemberStatusResponse] = None
     assignments: List[ShiftAssignmentResponse] = []
 
 class GridDailyQuotaInfo(BaseModel):

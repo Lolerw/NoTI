@@ -22,11 +22,18 @@ def init_db_engine():
         db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
 
     connect_args = {}
+    engine_kwargs = {
+        "pool_pre_ping": True,
+    }
     if "sqlite" in db_url:
         connect_args["check_same_thread"] = False
+    else:
+        engine_kwargs["pool_recycle"] = 300
+        engine_kwargs["pool_size"] = 10
+        engine_kwargs["max_overflow"] = 20
 
     try:
-        engine = create_engine(db_url, connect_args=connect_args)
+        engine = create_engine(db_url, connect_args=connect_args, **engine_kwargs)
         # Probar conexión simple
         with engine.connect() as conn:
             pass
@@ -36,7 +43,7 @@ def init_db_engine():
         logger.warning(f"No se pudo conectar a la base de datos principal ({db_url}): {e}")
         logger.info("Activando fallback transparente a SQLite para desarrollo y pruebas...")
         DATABASE_URL = FALLBACK_SQLITE_URL
-        return create_engine(FALLBACK_SQLITE_URL, connect_args={"check_same_thread": False})
+        return create_engine(FALLBACK_SQLITE_URL, connect_args={"check_same_thread": False}, pool_pre_ping=True)
 
 engine = init_db_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
