@@ -209,24 +209,70 @@ async function handleCellDrop(e, userId, dateStr, canEdit) {
 }
 
 // --- Carga y Renderizado de la Grilla Semanal (HU-04, HU-06, HU-07) ---
+let currentGridAbortController = null;
+
 async function loadGrid() {
+    if (currentGridAbortController) {
+        currentGridAbortController.abort();
+    }
+    currentGridAbortController = new AbortController();
+    const signal = currentGridAbortController.signal;
+
+    const gridContainer = document.getElementById('grid-container');
+    if (gridContainer) {
+        gridContainer.classList.add('opacity-50');
+    }
+
     try {
         const headers = {};
         if (STATE.currentUser && STATE.currentUser.id) {
             headers['X-User-Id'] = String(STATE.currentUser.id);
         }
         const res = await fetch(`/api/schedules/grid?team_id=${STATE.currentTeamId}&year=${STATE.currentYear}&week=${STATE.currentWeek}`, {
-            headers: headers
+            headers: headers,
+            signal: signal
         });
         if (!res.ok) {
-            console.error('Error al obtener datos de la grilla:', res.status, await res.text());
+            let errorMsg = 'Error al obtener datos de la grilla';
+            try {
+                const errData = await res.json();
+                if (errData && errData.detail) errorMsg = errData.detail;
+            } catch (_) {
+                const txt = await res.text();
+                if (txt) errorMsg = txt;
+            }
+            console.error('Error al obtener datos de la grilla:', res.status, errorMsg);
+            showToast(errorMsg, 'warning');
+
+            // Revertir selector si la grilla previa existe para mantener coherencia UI
+            if (STATE.gridData && STATE.gridData.schedule) {
+                STATE.currentWeek = STATE.gridData.schedule.week_number;
+                STATE.currentYear = STATE.gridData.schedule.year;
+                renderGrid();
+            }
             return;
         }
         STATE.gridData = await res.json();
         renderGrid();
         renderActionButtons();
     } catch (err) {
+        if (err.name === 'AbortError') {
+            // Cancelación intencional por navegación rápida; ignorar
+            return;
+        }
         console.error('Error cargando grilla:', err);
+        showToast('Fallo de conexión al cargar la semana', 'warning');
+        if (STATE.gridData && STATE.gridData.schedule) {
+            STATE.currentWeek = STATE.gridData.schedule.week_number;
+            STATE.currentYear = STATE.gridData.schedule.year;
+            renderGrid();
+        }
+    } finally {
+        if (currentGridAbortController && currentGridAbortController.signal === signal) {
+            if (gridContainer) {
+                gridContainer.classList.remove('opacity-50');
+            }
+        }
     }
 }
 

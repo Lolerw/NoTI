@@ -1,10 +1,15 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger("noti.main")
 
 from app.database import engine, Base, SessionLocal, get_db
 from app.routers import auth_routes, team_routes, catalog_routes, schedule_routes, user_routes
@@ -28,6 +33,16 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, (StarletteHTTPException, RequestValidationError)):
+        raise exc
+    logger.exception(f"Unhandled error processing {request.method} {request.url.path}: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Error interno del servidor: {str(exc)}"}
+    )
 
 # Servir archivos estáticos y plantillas HTML
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

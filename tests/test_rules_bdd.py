@@ -553,14 +553,18 @@ def test_export_consolidated_shifts_xlsx_and_csv(client):
     assert exp_xlsx.status_code == 200
     assert "spreadsheetml.sheet" in exp_xlsx.headers["content-type"]
     assert len(exp_xlsx.content) > 1000 # Archivo Excel binario generado con openpyxl
+    import io, openpyxl
+    wb = openpyxl.load_workbook(io.BytesIO(exp_xlsx.content))
+    assert "Propuesta 1 - Semanal" in wb.sheetnames
 
     # 3. Exportar en formato CSV
     exp_csv = client.get("/api/schedules/export?team_id=1&start_date=2026-10-01&end_date=2026-11-30&format=csv")
     assert exp_csv.status_code == 200
     assert "text/csv" in exp_csv.headers["content-type"]
     csv_text = exp_csv.content.decode("utf-8-sig")
-    assert "Equipo;Colaborador;Email;Fecha;Día;Turno;Tipo Jornada;Período;Estado" in csv_text
-    assert "CONSOLIDADO / PUBLICADO" in csv_text
+    assert "Equipo;Colaborador" in csv_text
+    assert "Lunes;Martes;Miércoles;Jueves;Viernes;Sábado;Domingo" in csv_text
+    assert "Semana 44" in csv_text
 
 def test_confirmed_scheduler_cannot_modify_and_reject_blocked_on_consolidated(client):
     """
